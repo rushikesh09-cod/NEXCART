@@ -11,8 +11,8 @@
 	<groupId>com.nexcart</groupId>
 	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>nexcart-backend</name>
+<description>NEXCART E-Commerce Platform Backend</description>
 	<url/>
 	<licenses>
 		<license/>
