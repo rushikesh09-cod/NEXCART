@@ -2,6 +2,7 @@ package com.nexcart.backend.service;
 
 import com.nexcart.backend.dto.ProductRequest;
 import com.nexcart.backend.entity.Product;
+import com.nexcart.backend.exception.ProductNotFoundException;
 import com.nexcart.backend.repository.ProductRepository;
 
 import org.springframework.stereotype.Service;
@@ -72,7 +73,7 @@ public class ProductService {
 
         return productRepository.findById(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ProductNotFoundException(
                                 "Product not found"
                         )
                 );
@@ -115,7 +116,7 @@ public class ProductService {
         Product product = productRepository
                 .findById(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ProductNotFoundException(
                                 "Product not found"
                         )
                 );
@@ -149,7 +150,7 @@ public class ProductService {
         Product product = productRepository
                 .findById(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ProductNotFoundException(
                                 "Product not found"
                         )
                 );

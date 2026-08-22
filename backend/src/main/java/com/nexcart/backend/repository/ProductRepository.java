@@ -8,9 +8,16 @@ import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
+    // Get all active products
     List<Product> findByActiveTrue();
 
-    List<Product> findByCategoryIgnoreCaseAndActiveTrue(String category);
+    // Search active products by name
+    List<Product> findByNameContainingIgnoreCaseAndActiveTrue(
+            String name
+    );
 
-    List<Product> findByNameContainingIgnoreCaseAndActiveTrue(String name);
+    // Get active products by category
+    List<Product> findByCategoryIgnoreCaseAndActiveTrue(
+            String category
+    );
 }
