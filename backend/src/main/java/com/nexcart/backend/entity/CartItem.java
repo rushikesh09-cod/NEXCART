@@ -1,6 +1,7 @@
 package com.nexcart.backend.entity;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,8 +29,12 @@ public class CartItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false)
+    @Column(
+            name = "id",
+            nullable = false
+    )
     private UUID id;
+
 
     @ManyToOne(
             fetch = FetchType.LAZY,
@@ -41,6 +46,7 @@ public class CartItem {
     )
     private Cart cart;
 
+
     @ManyToOne(
             fetch = FetchType.LAZY,
             optional = false
@@ -51,17 +57,20 @@ public class CartItem {
     )
     private Product product;
 
+
     @Column(
             name = "quantity",
             nullable = false
     )
     private Integer quantity;
 
+
     @Column(
             name = "created_at",
             nullable = false
     )
     private OffsetDateTime createdAt;
+
 
     @Column(
             name = "updated_at",

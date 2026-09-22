@@ -1,6 +1,12 @@
 package com.nexcart.backend.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,38 +22,129 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Product {
 
+    // =====================================================
+    // ID
+    // =====================================================
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false)
+    @Column(
+            name = "id",
+            nullable = false
+    )
     private UUID id;
 
-    @Column(name = "name", nullable = false, length = 150)
+
+    // =====================================================
+    // NAME
+    // =====================================================
+
+    @Column(
+            name = "name",
+            nullable = false,
+            length = 150
+    )
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+
+    // =====================================================
+    // DESCRIPTION
+    // =====================================================
+
+    @Column(
+            name = "description",
+            columnDefinition = "TEXT"
+    )
     private String description;
 
-    @Column(name = "price", nullable = false, precision = 12, scale = 2)
+
+    // =====================================================
+    // PRICE
+    // =====================================================
+
+    @Column(
+            name = "price",
+            nullable = false,
+            precision = 12,
+            scale = 2
+    )
     private BigDecimal price;
 
-    @Column(name = "stock_quantity", nullable = false)
+
+    // =====================================================
+    // STOCK
+    // =====================================================
+
+    @Column(
+            name = "stock_quantity",
+            nullable = false
+    )
     private Integer stockQuantity;
 
-    @Column(name = "category", nullable = false, length = 100)
+
+    // =====================================================
+    // CATEGORY
+    // =====================================================
+
+    @Column(
+            name = "category",
+            nullable = false,
+            length = 100
+    )
     private String category;
 
-    @Column(name = "brand", length = 100)
+
+    // =====================================================
+    // BRAND
+    // =====================================================
+
+    @Column(
+            name = "brand",
+            length = 100
+    )
     private String brand;
 
-    @Column(name = "image_url", length = 500)
+
+    // =====================================================
+    // IMAGE
+    // =====================================================
+
+    @Column(
+            name = "image_url",
+            length = 500
+    )
     private String imageUrl;
 
-    @Column(name = "active", nullable = false)
+
+    // =====================================================
+    // ACTIVE
+    // =====================================================
+
+    @Column(
+            name = "active",
+            nullable = false
+    )
     private Boolean active = true;
 
-    @Column(name = "created_at", nullable = false)
+
+    // =====================================================
+    // CREATED AT
+    // =====================================================
+
+    @Column(
+            name = "created_at",
+            nullable = false
+    )
     private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+
+    // =====================================================
+    // UPDATED AT
+    // =====================================================
+
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
     private OffsetDateTime updatedAt;
 }

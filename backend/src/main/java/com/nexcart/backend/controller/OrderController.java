@@ -4,6 +4,7 @@ import com.nexcart.backend.dto.CreateOrderRequest;
 import com.nexcart.backend.dto.OrderResponse;
 import com.nexcart.backend.security.JwtService;
 import com.nexcart.backend.service.OrderService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,9 +27,10 @@ public class OrderController {
         this.jwtService = jwtService;
     }
 
-    // =========================================================
-    // CREATE ORDER / CHECKOUT
-    // =========================================================
+
+    // =====================================================
+    // CREATE ORDER
+    // =====================================================
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
@@ -50,9 +52,10 @@ public class OrderController {
                 .body(response);
     }
 
-    // =========================================================
+
+    // =====================================================
     // GET ALL USER ORDERS
-    // =========================================================
+    // =====================================================
 
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getUserOrders(
@@ -62,16 +65,16 @@ public class OrderController {
         UUID userId =
                 extractUserId(authorization);
 
-        return ResponseEntity.ok(
-                orderService.getUserOrders(
-                        userId
-                )
-        );
+        List<OrderResponse> orders =
+                orderService.getUserOrders(userId);
+
+        return ResponseEntity.ok(orders);
     }
 
-    // =========================================================
+
+    // =====================================================
     // GET SINGLE ORDER
-    // =========================================================
+    // =====================================================
 
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(
@@ -82,17 +85,42 @@ public class OrderController {
         UUID userId =
                 extractUserId(authorization);
 
-        return ResponseEntity.ok(
+        OrderResponse response =
                 orderService.getOrder(
                         userId,
                         orderId
-                )
-        );
+                );
+
+        return ResponseEntity.ok(response);
     }
 
-    // =========================================================
-    // JWT USER ID
-    // =========================================================
+
+    // =====================================================
+    // CANCEL ORDER
+    // =====================================================
+
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable UUID orderId
+    ) {
+
+        UUID userId =
+                extractUserId(authorization);
+
+        OrderResponse response =
+                orderService.cancelOrder(
+                        userId,
+                        orderId
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    // =====================================================
+    // EXTRACT USER ID FROM JWT
+    // =====================================================
 
     private UUID extractUserId(
             String authorization
@@ -106,11 +134,21 @@ public class OrderController {
             );
         }
 
-        String token =
-                authorization.substring(7);
 
-        return jwtService.extractUserId(
-                token
-        );
+        String token =
+                authorization
+                        .substring(7)
+                        .trim();
+
+
+        if (token.isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "JWT token is missing"
+            );
+        }
+
+
+        return jwtService.extractUserId(token);
     }
 }

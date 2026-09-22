@@ -1,11 +1,14 @@
 package com.nexcart.backend.controller;
 
 import com.nexcart.backend.dto.AuthResponse;
+import com.nexcart.backend.dto.ForgotPasswordRequest;
 import com.nexcart.backend.dto.LoginRequest;
 import com.nexcart.backend.dto.RegisterRequest;
+import com.nexcart.backend.dto.ResetPasswordRequest;
 import com.nexcart.backend.dto.UserResponse;
 import com.nexcart.backend.entity.User;
 import com.nexcart.backend.service.AuthService;
+import com.nexcart.backend.service.PasswordResetService;
 
 import jakarta.validation.Valid;
 
@@ -18,21 +21,27 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(
+            AuthService authService,
+            PasswordResetService passwordResetService
+    ) {
         this.authService = authService;
+        this.passwordResetService = passwordResetService;
     }
 
-    // =========================
+    // =====================================================
     // REGISTER
-    // =========================
+    // =====================================================
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(
             @Valid @RequestBody RegisterRequest request
     ) {
 
-        User user = authService.register(request);
+        User user =
+                authService.register(request);
 
         UserResponse response =
                 UserResponse.fromUser(user);
@@ -42,9 +51,9 @@ public class AuthController {
                 .body(response);
     }
 
-    // =========================
+    // =====================================================
     // LOGIN
-    // =========================
+    // =====================================================
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
@@ -55,7 +64,9 @@ public class AuthController {
                 authService.login(request);
 
         UserResponse userResponse =
-                UserResponse.fromUser(result.user());
+                UserResponse.fromUser(
+                        result.user()
+                );
 
         AuthResponse response =
                 new AuthResponse(
@@ -65,5 +76,48 @@ public class AuthController {
                 );
 
         return ResponseEntity.ok(response);
+    }
+
+    // =====================================================
+    // FORGOT PASSWORD
+    // =====================================================
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+
+        passwordResetService.forgotPassword(
+                request.getEmail()
+        );
+
+        /*
+         * Always return the same response.
+         * This prevents email enumeration.
+         */
+
+        return ResponseEntity.ok(
+                "If an account exists with this email, "
+                        + "a password reset link has been sent."
+        );
+    }
+
+    // =====================================================
+    // RESET PASSWORD
+    // =====================================================
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+
+        passwordResetService.resetPassword(
+                request.getToken(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                "Password has been reset successfully."
+        );
     }
 }

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Samsung Galaxy A55",
+    "description": "Samsung mid-range smartphone",
+    "price": 34999,
+    "stockQuantity": 25,
+    "category": "Mobiles",
+    "brand": "Samsung",
+    "imageUrl": "/products/samsung-a55.jpg",
+    "active": true
+  },
+  {
+    "name": "iPhone 16",
+    "description": "Apple smartphone",
+    "price": 69999,
+    "stockQuantity": 10,
+    "category": "Mobiles",
+    "brand": "Apple",
+    "imageUrl": "/products/iphone-16.jpg",
+    "active": true
+  },
+  {
+    "name": "OnePlus 13",
+    "description": "OnePlus flagship smartphone",
+    "price": 69999,
+    "stockQuantity": 10,
+    "category": "Mobiles",
+    "brand": "OnePlus",
+    "imageUrl": "/products/oneplus-13.jpg",
+    "active": true
+  },
+  {
+    "name": "Dell Inspiron 15",
+    "description": "15-inch laptop for work and study",
+    "price": 58999,
+    "stockQuantity": 12,
+    "category": "Electronics",
+    "brand": "Dell",
+    "imageUrl": "/products/dell-inspiron.jpg",
+    "active": true
+  }
+]

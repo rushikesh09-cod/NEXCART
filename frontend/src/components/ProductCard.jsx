@@ -1,99 +1,385 @@
 import { useState } from "react";
+
+import ProductImage from "./ProductImage";
 import { addToCart } from "../api/cartApi";
 
-function ProductCard({ product }) {
 
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
+function ProductCard({
+    product,
+    onNavigate,
+}) {
+
+    const [loading, setLoading] =
+        useState(false);
+
+    const [message, setMessage] =
+        useState("");
+
+    const [messageType, setMessageType] =
+        useState("");
+
+
+    // =====================================================
+    // PRODUCT VALUES
+    // =====================================================
+
+    const stock =
+        Number(
+            product?.stockQuantity || 0
+        );
+
+    const price =
+        Number(
+            product?.price || 0
+        );
+
+    const isOutOfStock =
+        stock <= 0;
+
+
+    // =====================================================
+    // ADD TO CART
+    // =====================================================
 
     async function handleAddToCart() {
 
+        if (
+            loading ||
+            isOutOfStock ||
+            !product?.id
+        ) {
+            return;
+        }
+
         try {
+
             setLoading(true);
             setMessage("");
+            setMessageType("");
 
-            await addToCart(product.id, 1);
 
-            setMessage("Added to cart ✓");
+            await addToCart(
+                product.id,
+                1
+            );
+
+
+            setMessage(
+                "Added to cart ✓"
+            );
+
+            setMessageType(
+                "success"
+            );
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Add to cart error:",
+                error
+            );
+
 
             setMessage(
-                error.message || "Failed to add to cart"
+                error.message ||
+                "Failed to add to cart"
+            );
+
+            setMessageType(
+                "error"
             );
 
         } finally {
+
             setLoading(false);
+
         }
     }
 
+
+    // =====================================================
+    // VIEW PRODUCT
+    // =====================================================
+
+    function handleViewProduct() {
+
+        if (
+            !onNavigate ||
+            !product?.id
+        ) {
+            return;
+        }
+
+
+        onNavigate(
+            `/products/${product.id}`
+        );
+    }
+
+
+    // =====================================================
+    // KEYBOARD NAVIGATION
+    // =====================================================
+
+    function handleProductKeyDown(
+        event
+    ) {
+
+        if (
+            event.key === "Enter" ||
+            event.key === " "
+        ) {
+
+            event.preventDefault();
+
+            handleViewProduct();
+
+        }
+    }
+
+
+    // =====================================================
+    // RENDER
+    // =====================================================
+
     return (
-        <div className="product-card">
 
-            <div className="product-image">
+        <article className="product-card">
 
-                {product.imageUrl ? (
-                    <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                        }}
-                    />
-                ) : (
-                    <div className="image-placeholder">
-                        {product.brand}
-                    </div>
-                )}
 
-            </div>
+            {/* =================================================
+                PRODUCT IMAGE
+            ================================================= */}
 
-            <div className="product-info">
+            <div
+                className="product-image product-clickable"
+                onClick={
+                    handleViewProduct
+                }
+                role="button"
+                tabIndex={0}
+                onKeyDown={
+                    handleProductKeyDown
+                }
+                aria-label={`View ${
+                    product?.name ||
+                    "product"
+                } details`}
+            >
 
-                <p className="product-brand">
-                    {product.brand}
-                </p>
+                <ProductImage
+                    src={
+                        product?.imageUrl
+                    }
+                    alt={
+                        product?.name ||
+                        "Product"
+                    }
+                    brand={
+                        product?.brand
+                    }
+                    category={
+                        product?.category
+                    }
+                />
 
-                <h2 className="product-name">
-                    {product.name}
-                </h2>
 
-                <p className="product-description">
-                    {product.description}
-                </p>
+                {/* =================================================
+                    STOCK BADGE
+                ================================================= */}
 
-                <div className="product-bottom">
+                <div
+                    className={
+                        isOutOfStock
+                            ? "product-stock-badge out"
+                            : "product-stock-badge"
+                    }
+                >
 
-                    <strong className="product-price">
-                        ₹{Number(product.price).toLocaleString("en-IN")}
-                    </strong>
+                    {isOutOfStock
 
-                    <span className="product-stock">
-                        {product.stockQuantity} in stock
-                    </span>
+                        ? "Out of Stock"
+
+                        : stock <= 5
+
+                            ? `Only ${stock} left`
+
+                            : "In Stock"
+
+                    }
 
                 </div>
 
-                <button
-                    className="add-cart-button"
-                    onClick={handleAddToCart}
-                    disabled={loading}
+            </div>
+
+
+            {/* =================================================
+                PRODUCT INFORMATION
+            ================================================= */}
+
+            <div className="product-info">
+
+
+                {/* =================================================
+                    BRAND
+                ================================================= */}
+
+                {product?.brand && (
+
+                    <p className="product-brand">
+
+                        {product.brand}
+
+                    </p>
+
+                )}
+
+
+                {/* =================================================
+                    PRODUCT NAME
+                ================================================= */}
+
+                <h2
+                    className="product-name product-clickable"
+                    onClick={
+                        handleViewProduct
+                    }
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={
+                        handleProductKeyDown
+                    }
                 >
-                    {loading ? "Adding..." : "Add to Cart"}
-                </button>
+
+                    {product?.name ||
+                        "Unnamed Product"}
+
+                </h2>
+
+
+                {/* =================================================
+                    DESCRIPTION
+                ================================================= */}
+
+                {product?.description && (
+
+                    <p className="product-description">
+
+                        {product.description}
+
+                    </p>
+
+                )}
+
+
+                {/* =================================================
+                    PRICE
+                ================================================= */}
+
+                <div className="product-price-row">
+
+                    <strong className="product-price">
+
+                        ₹
+                        {price.toLocaleString(
+                            "en-IN"
+                        )}
+
+                    </strong>
+
+
+                    {!isOutOfStock && (
+
+                        <span className="product-stock">
+
+                            {stock} available
+
+                        </span>
+
+                    )}
+
+                </div>
+
+
+                {/* =================================================
+                    ACTIONS
+                ================================================= */}
+
+                <div className="product-actions">
+
+
+                    {/* VIEW DETAILS */}
+
+                    <button
+                        type="button"
+                        className="view-product-button"
+                        onClick={
+                            handleViewProduct
+                        }
+                    >
+                        View Details
+                    </button>
+
+
+                    {/* ADD TO CART */}
+
+                    <button
+                        type="button"
+                        className="add-cart-button"
+                        onClick={
+                            handleAddToCart
+                        }
+                        disabled={
+                            loading ||
+                            isOutOfStock
+                        }
+                    >
+
+                        {loading
+
+                            ? "Adding..."
+
+                            : isOutOfStock
+
+                                ? "Out of Stock"
+
+                                : "Add to Cart"
+
+                        }
+
+                    </button>
+
+                </div>
+
+
+                {/* =================================================
+                    CART MESSAGE
+                ================================================= */}
 
                 {message && (
-                    <p className="cart-message">
+
+                    <div
+                        className={
+                            messageType ===
+                            "success"
+
+                                ? "cart-message success"
+
+                                : "cart-message error"
+                        }
+                    >
+
                         {message}
-                    </p>
+
+                    </div>
+
                 )}
 
             </div>
 
-        </div>
+        </article>
     );
 }
+
 
 export default ProductCard;

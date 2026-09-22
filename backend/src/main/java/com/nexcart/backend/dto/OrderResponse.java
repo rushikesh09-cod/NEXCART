@@ -46,7 +46,13 @@ public class OrderResponse {
 
     private OffsetDateTime updatedAt;
 
-    private List<OrderItemResponse> items = new ArrayList<>();
+    private List<OrderItemResponse> items =
+            new ArrayList<>();
+
+
+    // =====================================================
+    // ORDER ITEM RESPONSE
+    // =====================================================
 
     @Getter
     @Setter

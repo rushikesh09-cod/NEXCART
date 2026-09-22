@@ -2,14 +2,18 @@ package com.nexcart.backend.config;
 
 import com.nexcart.backend.security.JwtAuthenticationFilter;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import org.springframework.http.HttpMethod;
 
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+
+import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -18,9 +22,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
-
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -31,6 +34,10 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    // =====================================================
+    // SECURITY FILTER CHAIN
+    // =====================================================
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
@@ -38,68 +45,138 @@ public class SecurityConfig {
 
         http
 
-            // =========================
-            // CORS
-            // =========================
-            .cors(Customizer.withDefaults())
+                // =================================================
+                // CORS
+                // =================================================
 
-            // =========================
-            // CSRF
-            // =========================
-            .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
-            // =========================
-            // AUTHORIZATION
-            // =========================
-            .authorizeHttpRequests(auth -> auth
+                // =================================================
+                // CSRF
+                // =================================================
 
-                // ---------------------------------
-                // Public authentication endpoints
-                // ---------------------------------
-                .requestMatchers(
-                        "/api/auth/register",
-                        "/api/auth/login"
-                ).permitAll()
+                .csrf(
+                        AbstractHttpConfigurer::disable
+                )
 
-                // ---------------------------------
-                // Public product GET APIs
-                // ---------------------------------
-                .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/products",
-                        "/api/products/**"
-                ).permitAll()
+                // =================================================
+                // SESSION
+                // =================================================
 
-                // ---------------------------------
-                // Everything else requires JWT
-                // ---------------------------------
-                .anyRequest().authenticated()
-            )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
 
-            // =========================
-            // DISABLE FORM LOGIN
-            // =========================
-            .formLogin(AbstractHttpConfigurer::disable)
+                // =================================================
+                // AUTHORIZATION
+                // =================================================
 
-            // =========================
-            // DISABLE BASIC AUTH
-            // =========================
-            .httpBasic(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
 
-            // =========================
-            // JWT FILTER
-            // =========================
-            .addFilterBefore(
-                    jwtAuthenticationFilter,
-                    UsernamePasswordAuthenticationFilter.class
-            );
+                        // -----------------------------------------
+                        // PUBLIC AUTH ENDPOINTS
+                        // -----------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password"
+                        ).permitAll()
+
+                        // -----------------------------------------
+                        // PUBLIC PRODUCTS
+                        // -----------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**"
+                        ).permitAll()
+
+                        // -----------------------------------------
+                        // PUBLIC CATEGORIES
+                        // -----------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/categories",
+                                "/api/categories/**"
+                        ).permitAll()
+
+                        // -----------------------------------------
+                        // ADMIN
+                        // -----------------------------------------
+
+                        .requestMatchers(
+                                "/api/admin/**"
+                        ).hasRole("ADMIN")
+
+                        // -----------------------------------------
+                        // CUSTOMER ORDERS
+                        // -----------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/users/me/orders"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/users/me/orders",
+                                "/api/users/me/orders/**"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/users/me/orders/*/cancel"
+                        ).authenticated()
+
+                        // -----------------------------------------
+                        // EVERYTHING ELSE
+                        // -----------------------------------------
+
+                        .anyRequest().authenticated()
+                )
+
+                // =================================================
+                // DISABLE FORM LOGIN
+                // =================================================
+
+                .formLogin(
+                        AbstractHttpConfigurer::disable
+                )
+
+                // =================================================
+                // DISABLE BASIC AUTH
+                // =================================================
+
+                .httpBasic(
+                        AbstractHttpConfigurer::disable
+                )
+
+                // =================================================
+                // JWT FILTER
+                // =================================================
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
 
-    // =========================================================
-    // CORS CONFIGURATION
-    // =========================================================
+    // =====================================================
+    // CORS
+    // =====================================================
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -109,7 +186,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(
                 List.of(
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "http://localhost:3000"
                 )
         );
 
@@ -118,6 +196,7 @@ public class SecurityConfig {
                         "GET",
                         "POST",
                         "PUT",
+                        "PATCH",
                         "DELETE",
                         "OPTIONS"
                 )

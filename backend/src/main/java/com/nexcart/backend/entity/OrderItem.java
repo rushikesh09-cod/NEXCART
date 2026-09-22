@@ -1,6 +1,7 @@
 package com.nexcart.backend.entity;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,38 +23,89 @@ public class OrderItem {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false)
+
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "order_id",
+            nullable = false
+    )
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "product_id", nullable = false)
+
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "product_id",
+            nullable = false
+    )
     private Product product;
 
-    @Column(name = "product_name", nullable = false, length = 150)
+
+    @Column(
+            name = "product_name",
+            nullable = false,
+            length = 150
+    )
     private String productName;
 
-    @Column(name = "brand", length = 100)
+
+    @Column(
+            name = "brand",
+            length = 100
+    )
     private String brand;
 
-    @Column(name = "price", nullable = false, precision = 12, scale = 2)
+
+    @Column(
+            name = "price",
+            nullable = false,
+            precision = 12,
+            scale = 2
+    )
     private BigDecimal price;
 
-    @Column(name = "quantity", nullable = false)
+
+    @Column(
+            name = "quantity",
+            nullable = false
+    )
     private Integer quantity;
 
-    @Column(name = "subtotal", nullable = false, precision = 12, scale = 2)
+
+    @Column(
+            name = "subtotal",
+            nullable = false,
+            precision = 12,
+            scale = 2
+    )
     private BigDecimal subtotal;
 
-    @Column(name = "created_at", nullable = false)
+
+    @Column(
+            name = "created_at",
+            nullable = false
+    )
     private OffsetDateTime createdAt;
+
+
+    // =====================================================
+    // PRE-PERSIST
+    // =====================================================
 
     @PrePersist
     protected void onCreate() {
 
         if (createdAt == null) {
+
             createdAt =
-                    OffsetDateTime.now(ZoneOffset.UTC);
+                    OffsetDateTime.now(
+                            ZoneOffset.UTC
+                    );
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.nexcart.backend.dto;
 
 import com.nexcart.backend.entity.Product;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -13,18 +14,31 @@ import java.util.UUID;
 public class ProductResponse {
 
     private UUID id;
+
     private String name;
+
     private String description;
+
     private BigDecimal price;
+
     private Integer stockQuantity;
+
     private String category;
+
     private String brand;
+
     private String imageUrl;
+
     private Boolean active;
+
     private OffsetDateTime createdAt;
+
     private OffsetDateTime updatedAt;
 
-    public static ProductResponse fromProduct(Product product) {
+
+    public static ProductResponse fromProduct(
+            Product product
+    ) {
 
         return new ProductResponse(
                 product.getId(),

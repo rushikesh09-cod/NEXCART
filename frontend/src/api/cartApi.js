@@ -1,44 +1,255 @@
+const API_URL =
+    "http://localhost:8081/api/users/me/cart";
 
-const API_BASE_URL = "http://localhost:8080/api";
+
+// =====================================================
+// GET TOKEN
+// =====================================================
+
+function getToken() {
+
+    const token =
+        localStorage.getItem("token");
+
+    return token;
+}
+
+
+// =====================================================
+// HEADERS
+// =====================================================
 
 function getHeaders() {
-    const token = localStorage.getItem("token");
 
-    return {
-        Authorization: `Bearer ${token}`,
+    const token = getToken();
+
+    const headers = {
         "Content-Type": "application/json",
     };
+
+    if (token) {
+
+        headers.Authorization =
+            `Bearer ${token}`;
+
+    }
+
+    return headers;
 }
+
+
+// =====================================================
+// GET CART
+// =====================================================
 
 export async function getCart() {
-    const response = await fetch(
-        `${API_BASE_URL}/users/me/cart`,
-        {
-            method: "GET",
-            headers: getHeaders(),
-        }
-    );
+
+    const response =
+        await fetch(
+            API_URL,
+            {
+                method: "GET",
+                headers: getHeaders(),
+            }
+        );
 
     if (!response.ok) {
-        throw new Error("Failed to load cart");
+
+        let message =
+            `Unable to load cart (${response.status})`;
+
+        try {
+
+            const error =
+                await response.json();
+
+            if (error.message) {
+                message = error.message;
+            }
+
+        } catch {
+            // Response is not JSON
+        }
+
+        throw new Error(message);
     }
 
     return response.json();
 }
 
-export async function addToCart(productId, quantity = 1) {
-    const response = await fetch(
-        `${API_BASE_URL}/users/me/cart/items/${productId}?quantity=${quantity}`,
-        {
-            method: "POST",
-            headers: getHeaders(),
-        }
-    );
+
+// =====================================================
+// ADD TO CART
+// =====================================================
+
+export async function addToCart(
+    productId,
+    quantity = 1
+) {
+
+    const token = getToken();
+
+    if (!token) {
+
+        throw new Error(
+            "Please login before adding products to cart."
+        );
+    }
+
+    const response =
+        await fetch(
+            `${API_URL}/items/${productId}?quantity=${quantity}`,
+            {
+                method: "POST",
+                headers: getHeaders(),
+            }
+        );
 
     if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || "Failed to add product to cart");
+
+        let message =
+            `Unable to add product to cart (${response.status})`;
+
+        try {
+
+            const error =
+                await response.json();
+
+            if (error.message) {
+                message = error.message;
+            }
+
+        } catch {
+            // Response is not JSON
+        }
+
+        throw new Error(message);
     }
 
     return response.json();
+}
+
+
+// =====================================================
+// UPDATE CART QUANTITY
+// =====================================================
+
+export async function updateCartQuantity(
+    productId,
+    quantity
+) {
+
+    const response =
+        await fetch(
+            `${API_URL}/items/${productId}?quantity=${quantity}`,
+            {
+                method: "PUT",
+                headers: getHeaders(),
+            }
+        );
+
+    if (!response.ok) {
+
+        let message =
+            `Unable to update quantity (${response.status})`;
+
+        try {
+
+            const error =
+                await response.json();
+
+            if (error.message) {
+                message = error.message;
+            }
+
+        } catch {
+            // Response is not JSON
+        }
+
+        throw new Error(message);
+    }
+
+    return response.json();
+}
+
+
+// =====================================================
+// REMOVE ITEM
+// =====================================================
+
+export async function removeFromCart(
+    productId
+) {
+
+    const response =
+        await fetch(
+            `${API_URL}/items/${productId}`,
+            {
+                method: "DELETE",
+                headers: getHeaders(),
+            }
+        );
+
+    if (!response.ok) {
+
+        let message =
+            `Unable to remove item (${response.status})`;
+
+        try {
+
+            const error =
+                await response.json();
+
+            if (error.message) {
+                message = error.message;
+            }
+
+        } catch {
+            // Response is not JSON
+        }
+
+        throw new Error(message);
+    }
+
+    return true;
+}
+
+
+// =====================================================
+// CLEAR CART
+// =====================================================
+
+export async function clearCart() {
+
+    const response =
+        await fetch(
+            API_URL,
+            {
+                method: "DELETE",
+                headers: getHeaders(),
+            }
+        );
+
+    if (!response.ok) {
+
+        let message =
+            `Unable to clear cart (${response.status})`;
+
+        try {
+
+            const error =
+                await response.json();
+
+            if (error.message) {
+                message = error.message;
+            }
+
+        } catch {
+            // Response is not JSON
+        }
+
+        throw new Error(message);
+    }
+
+    return true;
 }

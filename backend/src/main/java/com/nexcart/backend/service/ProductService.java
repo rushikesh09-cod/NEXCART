@@ -22,20 +22,20 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    // =========================
+    // =====================================================
     // CREATE PRODUCT
-    // =========================
+    // =====================================================
 
     @Transactional
     public Product createProduct(ProductRequest request) {
 
         Product product = new Product();
 
-        product.setName(request.getName());
+        product.setName(request.getName().trim());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
-        product.setCategory(request.getCategory());
+        product.setCategory(request.getCategory().trim());
         product.setBrand(request.getBrand());
         product.setImageUrl(request.getImageUrl());
 
@@ -54,9 +54,10 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    // =========================
+    // =====================================================
     // GET ALL ACTIVE PRODUCTS
-    // =========================
+    // CUSTOMER
+    // =====================================================
 
     @Transactional(readOnly = true)
     public List<Product> getAllProducts() {
@@ -64,14 +65,26 @@ public class ProductService {
         return productRepository.findByActiveTrue();
     }
 
-    // =========================
+    // =====================================================
+    // GET ALL PRODUCTS
+    // ADMIN
+    // =====================================================
+
+    @Transactional(readOnly = true)
+    public List<Product> getAllProductsForAdmin() {
+
+        return productRepository.findAll();
+    }
+
+    // =====================================================
     // GET PRODUCT BY ID
-    // =========================
+    // =====================================================
 
     @Transactional(readOnly = true)
     public Product getProductById(UUID id) {
 
-        return productRepository.findById(id)
+        return productRepository
+                .findById(id)
                 .orElseThrow(() ->
                         new ProductNotFoundException(
                                 "Product not found"
@@ -79,33 +92,59 @@ public class ProductService {
                 );
     }
 
-    // =========================
+    // =====================================================
     // SEARCH PRODUCTS
-    // =========================
+    // =====================================================
 
     @Transactional(readOnly = true)
-    public List<Product> searchProducts(String name) {
+    public List<Product> searchProducts(String searchTerm) {
 
-        return productRepository
-                .findByNameContainingIgnoreCaseAndActiveTrue(name);
+        if (searchTerm == null ||
+                searchTerm.trim().isEmpty()) {
+
+            return productRepository.findByActiveTrue();
+        }
+
+        return productRepository.searchProducts(
+                searchTerm.trim()
+        );
     }
 
-    // =========================
+    // =====================================================
     // PRODUCTS BY CATEGORY
-    // =========================
+    // =====================================================
 
     @Transactional(readOnly = true)
     public List<Product> getProductsByCategory(
             String category
     ) {
 
+        if (category == null ||
+                category.trim().isEmpty()) {
+
+            return List.of();
+        }
+
         return productRepository
-                .findByCategoryIgnoreCaseAndActiveTrue(category);
+                .findByCategoryIgnoreCaseAndActiveTrue(
+                        category.trim()
+                );
     }
 
-    // =========================
+    // =====================================================
+    // GET ACTIVE CATEGORIES
+    // =====================================================
+
+    @Transactional(readOnly = true)
+    public List<String> getCategories() {
+
+        return productRepository
+                .findDistinctActiveCategories();
+    }
+
+    // =====================================================
     // UPDATE PRODUCT
-    // =========================
+    // =====================================================
 
     @Transactional
     public Product updateProduct(
@@ -113,24 +152,48 @@ public class ProductService {
             ProductRequest request
     ) {
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ProductNotFoundException(
-                                "Product not found"
-                        )
-                );
+        Product product =
+                productRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new ProductNotFoundException(
+                                        "Product not found"
+                                )
+                        );
 
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-        product.setStockQuantity(request.getStockQuantity());
-        product.setCategory(request.getCategory());
-        product.setBrand(request.getBrand());
-        product.setImageUrl(request.getImageUrl());
+        product.setName(
+                request.getName().trim()
+        );
+
+        product.setDescription(
+                request.getDescription()
+        );
+
+        product.setPrice(
+                request.getPrice()
+        );
+
+        product.setStockQuantity(
+                request.getStockQuantity()
+        );
+
+        product.setCategory(
+                request.getCategory().trim()
+        );
+
+        product.setBrand(
+                request.getBrand()
+        );
+
+        product.setImageUrl(
+                request.getImageUrl()
+        );
 
         if (request.getActive() != null) {
-            product.setActive(request.getActive());
+
+            product.setActive(
+                    request.getActive()
+            );
         }
 
         product.setUpdatedAt(
@@ -140,20 +203,49 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    // =========================
+    // =====================================================
+    // ACTIVATE / DEACTIVATE PRODUCT
+    // =====================================================
+
+    @Transactional
+    public Product setProductActive(
+            UUID id,
+            boolean active
+    ) {
+
+        Product product =
+                productRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new ProductNotFoundException(
+                                        "Product not found"
+                                )
+                        );
+
+        product.setActive(active);
+
+        product.setUpdatedAt(
+                OffsetDateTime.now(ZoneOffset.UTC)
+        );
+
+        return productRepository.save(product);
+    }
+
+    // =====================================================
     // DELETE PRODUCT
-    // =========================
+    // =====================================================
 
     @Transactional
     public void deleteProduct(UUID id) {
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ProductNotFoundException(
-                                "Product not found"
-                        )
-                );
+        Product product =
+                productRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new ProductNotFoundException(
+                                        "Product not found"
+                                )
+                        );
 
         productRepository.delete(product);
     }

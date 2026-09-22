@@ -1,0 +1,43 @@
+warning: in the working copy of 'backend/pom.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/main/resources/application.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/App.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/App.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/index.css', LF will be replaced by CRLF the next time Git touches it
+ backend/pom.xml                                    |   14 [32m+[m
+ .../com/nexcart/backend/config/SecurityConfig.java |  203 [32m+[m[31m-[m
+ .../nexcart/backend/controller/AuthController.java |   68 [32m+[m[31m-[m
+ .../backend/controller/OrderController.java        |   82 [32m+[m[31m-[m
+ .../backend/controller/ProductController.java      |   87 [32m+[m[31m-[m
+ .../com/nexcart/backend/dto/OrderResponse.java     |    8 [32m+[m[31m-[m
+ .../com/nexcart/backend/dto/ProductRequest.java    |   53 [32m+[m[31m-[m
+ .../com/nexcart/backend/dto/ProductResponse.java   |   16 [32m+[m[31m-[m
+ .../main/java/com/nexcart/backend/entity/Cart.java |   10 [32m+[m[31m-[m
+ .../java/com/nexcart/backend/entity/CartItem.java  |   11 [32m+[m[31m-[m
+ .../java/com/nexcart/backend/entity/Order.java     |  127 [32m+[m[31m-[m
+ .../java/com/nexcart/backend/entity/OrderItem.java |   74 [32m+[m[31m-[m
+ .../java/com/nexcart/backend/entity/Product.java   |  121 [32m+[m[31m-[m
+ .../main/java/com/nexcart/backend/entity/Role.java |   54 [32m+[m[31m-[m
+ .../backend/exception/GlobalExceptionHandler.java  |  131 [32m+[m[31m-[m
+ .../nexcart/backend/repository/CartRepository.java |   13 [32m+[m[31m-[m
+ .../backend/repository/OrderItemRepository.java    |    8 [32m+[m[31m-[m
+ .../backend/repository/OrderRepository.java        |   83 [32m+[m
+ .../backend/repository/ProductRepository.java      |  118 [32m+[m[31m-[m
+ .../nexcart/backend/repository/RoleRepository.java |    9 [32m+[m[31m-[m
+ .../nexcart/backend/repository/UserRepository.java |    7 [32m+[m[31m-[m
+ .../backend/security/JwtAuthenticationFilter.java  |  388 [32m+[m[31m-[m
+ .../com/nexcart/backend/security/JwtService.java   |  165 [32m+[m[31m-[m
+ .../com/nexcart/backend/service/AuthService.java   |  276 [32m+[m[31m-[m
+ .../com/nexcart/backend/service/OrderService.java  |  676 [32m+[m[31m-[m
+ .../nexcart/backend/service/ProductService.java    |  178 [32m+[m[31m-[m
+ backend/src/main/resources/application.properties  |   62 [32m+[m[31m-[m
+ frontend/src/App.css                               | 7099 [32m++++++++++++++++++[m[31m--[m
+ frontend/src/App.jsx                               |  978 [32m++[m[31m-[m
+ frontend/src/api/authApi.js                        |  407 [32m+[m[31m-[m
+ frontend/src/api/cartApi.js                        |  253 [32m+[m[31m-[m
+ frontend/src/api/productApi.js                     |  252 [32m+[m[31m-[m
+ frontend/src/components/ProductCard.jsx            |  380 [32m+[m[31m-[m
+ frontend/src/index.css                             |   67 [32m+[m[31m-[m
+ frontend/src/pages/Login.jsx                       |  343 [32m+[m[31m-[m
+ frontend/src/pages/Products.jsx                    |  612 [32m+[m[31m-[m
+ frontend/src/services/api.js                       |  165 [32m+[m[31m-[m
+ 37 files changed, 12310 insertions(+), 1288 deletions(-)

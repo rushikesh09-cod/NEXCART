@@ -9,10 +9,11 @@ import com.nexcart.backend.entity.OrderItem;
 import com.nexcart.backend.entity.Product;
 import com.nexcart.backend.entity.User;
 import com.nexcart.backend.repository.CartRepository;
-import com.nexcart.backend.repository.OrderRepository;
 import com.nexcart.backend.repository.OrderItemRepository;
+import com.nexcart.backend.repository.OrderRepository;
 import com.nexcart.backend.repository.ProductRepository;
 import com.nexcart.backend.repository.UserRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,9 +47,10 @@ public class OrderService {
         this.userRepository = userRepository;
     }
 
-    // =========================================================
-    // CREATE ORDER / CHECKOUT
-    // =========================================================
+
+    // =====================================================
+    // CREATE ORDER
+    // =====================================================
 
     @Transactional
     public OrderResponse createOrder(
@@ -56,23 +58,44 @@ public class OrderService {
             CreateOrderRequest request
     ) {
 
+        // -------------------------------------------------
+        // VALIDATE REQUEST
+        // -------------------------------------------------
+
         validateShippingRequest(request);
 
-        User user = userRepository
-                .findById(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "User not found"
-                        )
-                );
 
-        Cart cart = cartRepository
-                .findByUserId(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Cart not found"
-                        )
-                );
+        // -------------------------------------------------
+        // FIND USER
+        // -------------------------------------------------
+
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "User not found"
+                                )
+                        );
+
+
+        // -------------------------------------------------
+        // FIND CART
+        // -------------------------------------------------
+
+        Cart cart =
+                cartRepository
+                        .findByUserId(userId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Cart not found"
+                                )
+                        );
+
+
+        // -------------------------------------------------
+        // CHECK CART
+        // -------------------------------------------------
 
         if (cart.getItems() == null ||
                 cart.getItems().isEmpty()) {
@@ -82,137 +105,229 @@ public class OrderService {
             );
         }
 
-        // -----------------------------------------------------
-        // Create Order
-        // -----------------------------------------------------
 
-        Order order = new Order();
-
-        order.setUser(user);
-        order.setStatus("PENDING");
-
-        order.setShippingFirstName(
-                request.getShippingFirstName()
-        );
-
-        order.setShippingLastName(
-                request.getShippingLastName()
-        );
-
-        order.setShippingPhone(
-                request.getShippingPhone()
-        );
-
-        order.setShippingAddressLine1(
-                request.getShippingAddressLine1()
-        );
-
-        order.setShippingAddressLine2(
-                request.getShippingAddressLine2()
-        );
-
-        order.setShippingCity(
-                request.getShippingCity()
-        );
-
-        order.setShippingState(
-                request.getShippingState()
-        );
-
-        order.setShippingPostalCode(
-                request.getShippingPostalCode()
-        );
-
-        order.setShippingCountry(
-                request.getShippingCountry()
-        );
+        // -------------------------------------------------
+        // CURRENT UTC TIME
+        // -------------------------------------------------
 
         OffsetDateTime now =
                 OffsetDateTime.now(ZoneOffset.UTC);
 
+
+        // -------------------------------------------------
+        // CREATE ORDER
+        // -------------------------------------------------
+
+        Order order = new Order();
+
+        order.setUser(user);
+
+        order.setStatus("PENDING");
+
+        order.setShippingFirstName(
+                request.getShippingFirstName().trim()
+        );
+
+        order.setShippingLastName(
+                request.getShippingLastName().trim()
+        );
+
+        order.setShippingPhone(
+                request.getShippingPhone().trim()
+        );
+
+        order.setShippingAddressLine1(
+                request.getShippingAddressLine1().trim()
+        );
+
+        String addressLine2 =
+                request.getShippingAddressLine2();
+
+        order.setShippingAddressLine2(
+                addressLine2 == null ||
+                        addressLine2.trim().isEmpty()
+                        ? null
+                        : addressLine2.trim()
+        );
+
+        order.setShippingCity(
+                request.getShippingCity().trim()
+        );
+
+        order.setShippingState(
+                request.getShippingState().trim()
+        );
+
+        order.setShippingPostalCode(
+                request.getShippingPostalCode().trim()
+        );
+
+        order.setShippingCountry(
+                request.getShippingCountry().trim()
+        );
+
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
+
+
+        // -------------------------------------------------
+        // CALCULATE ORDER TOTAL
+        // -------------------------------------------------
 
         BigDecimal total =
                 BigDecimal.ZERO;
 
+
         List<OrderItem> orderItems =
                 new ArrayList<>();
 
-        // -----------------------------------------------------
-        // Convert Cart Items -> Order Items
-        // -----------------------------------------------------
+
+        // -------------------------------------------------
+        // PROCESS CART ITEMS
+        // -------------------------------------------------
 
         for (CartItem cartItem : cart.getItems()) {
 
-            Product product =
+            if (cartItem == null) {
+
+                throw new IllegalArgumentException(
+                        "Invalid cart item"
+                );
+            }
+
+
+            // -------------------------------------------------
+            // CART PRODUCT
+            // -------------------------------------------------
+
+            Product cartProduct =
                     cartItem.getProduct();
 
-            if (product == null) {
+
+            if (cartProduct == null ||
+                    cartProduct.getId() == null) {
 
                 throw new IllegalArgumentException(
                         "Product not found in cart"
                 );
             }
 
-            // Reload product from database
-            Product currentProduct =
+
+            UUID productId =
+                    cartProduct.getId();
+
+
+            // -------------------------------------------------
+            // LOAD CURRENT PRODUCT FROM DATABASE
+            //
+            // Never trust price/stock information from
+            // the frontend or stale cart data.
+            // -------------------------------------------------
+
+            Product product =
                     productRepository
-                            .findById(product.getId())
+                            .findById(productId)
                             .orElseThrow(() ->
                                     new IllegalArgumentException(
                                             "Product not found: "
-                                                    + product.getId()
+                                                    + productId
                                     )
                             );
 
+
+            // -------------------------------------------------
+            // ACTIVE PRODUCT CHECK
+            // -------------------------------------------------
+
             if (!Boolean.TRUE.equals(
-                    currentProduct.getActive()
+                    product.getActive()
             )) {
 
                 throw new IllegalArgumentException(
-                        "Product is inactive: "
-                                + currentProduct.getName()
+                        "Product is no longer available: "
+                                + product.getName()
                 );
             }
 
-            int quantity =
+
+            // -------------------------------------------------
+            // QUANTITY CHECK
+            // -------------------------------------------------
+
+            Integer quantity =
                     cartItem.getQuantity();
 
-            if (quantity <= 0) {
+
+            if (quantity == null ||
+                    quantity <= 0) {
 
                 throw new IllegalArgumentException(
-                        "Invalid cart quantity"
+                        "Invalid cart quantity for product: "
+                                + product.getName()
                 );
             }
 
-            // -------------------------------------------------
-            // Stock validation
-            // -------------------------------------------------
-
-            if (currentProduct.getStockQuantity()
-                    < quantity) {
-
-                throw new IllegalArgumentException(
-                        "Insufficient stock for product: "
-                                + currentProduct.getName()
-                );
-            }
 
             // -------------------------------------------------
-            // Price snapshot
+            // PRICE CHECK
             // -------------------------------------------------
 
             BigDecimal price =
-                    currentProduct.getPrice();
+                    product.getPrice();
+
+
+            if (price == null ||
+                    price.compareTo(BigDecimal.ZERO) <= 0) {
+
+                throw new IllegalArgumentException(
+                        "Invalid product price: "
+                                + product.getName()
+                );
+            }
+
+
+            // -------------------------------------------------
+            // ATOMIC STOCK DECREASE
+            //
+            // The database verifies:
+            //
+            // active = true
+            // stock >= quantity
+            //
+            // and decreases stock atomically.
+            // -------------------------------------------------
+
+            int updatedRows =
+                    productRepository.decreaseStock(
+                            productId,
+                            quantity,
+                            now
+                    );
+
+
+            if (updatedRows != 1) {
+
+                throw new IllegalArgumentException(
+                        "Insufficient stock or product is unavailable: "
+                                + product.getName()
+                );
+            }
+
+
+            // -------------------------------------------------
+            // CALCULATE SUBTOTAL
+            //
+            // Price comes from the database.
+            // -------------------------------------------------
 
             BigDecimal subtotal =
                     price.multiply(
                             BigDecimal.valueOf(quantity)
                     );
 
+
             // -------------------------------------------------
-            // Create Order Item
+            // CREATE ORDER ITEM
             // -------------------------------------------------
 
             OrderItem orderItem =
@@ -220,16 +335,14 @@ public class OrderService {
 
             orderItem.setOrder(order);
 
-            orderItem.setProduct(
-                    currentProduct
-            );
+            orderItem.setProduct(product);
 
             orderItem.setProductName(
-                    currentProduct.getName()
+                    product.getName()
             );
 
             orderItem.setBrand(
-                    currentProduct.getBrand()
+                    product.getBrand()
             );
 
             orderItem.setPrice(price);
@@ -240,97 +353,96 @@ public class OrderService {
 
             orderItem.setCreatedAt(now);
 
+
             orderItems.add(orderItem);
+
+
+            // -------------------------------------------------
+            // ADD TO TOTAL
+            // -------------------------------------------------
 
             total =
                     total.add(subtotal);
-
-            // -------------------------------------------------
-            // Reduce stock
-            // -------------------------------------------------
-
-            currentProduct.setStockQuantity(
-                    currentProduct.getStockQuantity()
-                            - quantity
-            );
-
-            productRepository.save(
-                    currentProduct
-            );
         }
 
-        // -----------------------------------------------------
-        // Set order total
-        // -----------------------------------------------------
+
+        // -------------------------------------------------
+        // SET ORDER TOTAL
+        // -------------------------------------------------
 
         order.setTotalAmount(total);
 
-        // -----------------------------------------------------
-        // Link items to order
-        // -----------------------------------------------------
 
-        for (OrderItem orderItem : orderItems) {
+        // -------------------------------------------------
+        // LINK ORDER ITEMS
+        // -------------------------------------------------
 
-            order.getItems().add(orderItem);
-        }
+        order.getItems()
+                .addAll(orderItems);
 
-        // -----------------------------------------------------
-        // Save order
-        // -----------------------------------------------------
+
+        // -------------------------------------------------
+        // SAVE ORDER
+        //
+        // Order has CascadeType.ALL for items, so the
+        // order items will also be persisted.
+        // -------------------------------------------------
 
         Order savedOrder =
                 orderRepository.save(order);
 
-        // -----------------------------------------------------
-        // Save order items
-        // -----------------------------------------------------
+
+        // -------------------------------------------------
+        // SAVE ORDER ITEMS
+        //
+        // Kept explicitly for compatibility with the
+        // current project structure.
+        // -------------------------------------------------
 
         orderItemRepository.saveAll(
                 orderItems
         );
 
-        // -----------------------------------------------------
-        // Clear cart
-        // -----------------------------------------------------
+
+        // -------------------------------------------------
+        // CLEAR CART
+        // -------------------------------------------------
 
         cart.getItems().clear();
 
-        cart.setUpdatedAt(
-                OffsetDateTime.now(ZoneOffset.UTC)
-        );
+        cart.setUpdatedAt(now);
 
         cartRepository.save(cart);
 
-        // -----------------------------------------------------
-        // Return response
-        // -----------------------------------------------------
+
+        // -------------------------------------------------
+        // RETURN RESPONSE
+        // -------------------------------------------------
 
         return toResponse(savedOrder);
     }
 
-    // =========================================================
-    // GET USER ORDERS
-    // =========================================================
+
+    // =====================================================
+    // GET ALL USER ORDERS
+    // =====================================================
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getUserOrders(
             UUID userId
     ) {
 
-        List<Order> orders =
-                orderRepository
-                        .findByUserIdOrderByCreatedAtDesc(
-                                userId
-                        );
-
-        return orders.stream()
+        return orderRepository
+                .findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    // =========================================================
-    // GET SINGLE ORDER
-    // =========================================================
+
+    // =====================================================
+    // GET SINGLE USER ORDER
+    // =====================================================
 
     @Transactional(readOnly = true)
     public OrderResponse getOrder(
@@ -353,9 +465,294 @@ public class OrderService {
         return toResponse(order);
     }
 
-    // =========================================================
-    // CONVERT ENTITY -> DTO
-    // =========================================================
+
+    // =====================================================
+    // CANCEL USER ORDER
+    // =====================================================
+
+    @Transactional
+    public OrderResponse cancelOrder(
+            UUID userId,
+            UUID orderId
+    ) {
+
+        // -------------------------------------------------
+        // FIND USER'S ORDER
+        // -------------------------------------------------
+
+        Order order =
+                orderRepository
+                        .findByIdAndUserId(
+                                orderId,
+                                userId
+                        )
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Order not found"
+                                )
+                        );
+
+
+        // -------------------------------------------------
+        // ONLY PENDING ORDERS CAN BE CANCELLED
+        // -------------------------------------------------
+
+        if (!"PENDING".equalsIgnoreCase(
+                order.getStatus()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Only pending orders can be cancelled."
+            );
+        }
+
+
+        OffsetDateTime now =
+                OffsetDateTime.now(ZoneOffset.UTC);
+
+
+        // -------------------------------------------------
+        // RESTORE STOCK
+        // -------------------------------------------------
+
+        if (order.getItems() != null) {
+
+            for (OrderItem orderItem :
+                    order.getItems()) {
+
+                if (orderItem == null) {
+                    continue;
+                }
+
+
+                Product product =
+                        orderItem.getProduct();
+
+
+                if (product == null ||
+                        product.getId() == null) {
+
+                    continue;
+                }
+
+
+                Integer quantity =
+                        orderItem.getQuantity();
+
+
+                if (quantity == null ||
+                        quantity <= 0) {
+
+                    continue;
+                }
+
+
+                // -------------------------------------------------
+                // ATOMIC STOCK RESTORE
+                // -------------------------------------------------
+
+                int updatedRows =
+                        productRepository.restoreStock(
+                                product.getId(),
+                                quantity,
+                                now
+                        );
+
+
+                if (updatedRows != 1) {
+
+                    throw new IllegalStateException(
+                            "Unable to restore stock for product: "
+                                    + product.getId()
+                    );
+                }
+            }
+        }
+
+
+        // -------------------------------------------------
+        // UPDATE ORDER STATUS
+        // -------------------------------------------------
+
+        order.setStatus("CANCELLED");
+
+        order.setUpdatedAt(now);
+
+
+        Order savedOrder =
+                orderRepository.save(order);
+
+
+        return toResponse(savedOrder);
+    }
+
+
+    // =====================================================
+    // GET ALL ORDERS - ADMIN
+    // =====================================================
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getAllOrdersForAdmin() {
+
+        return orderRepository
+                .findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+
+    // =====================================================
+    // GET SINGLE ORDER - ADMIN
+    // =====================================================
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderForAdmin(
+            UUID orderId
+    ) {
+
+        Order order =
+                orderRepository
+                        .findById(orderId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Order not found"
+                                )
+                        );
+
+        return toResponse(order);
+    }
+
+
+    // =====================================================
+    // UPDATE ORDER STATUS - ADMIN
+    // =====================================================
+
+    @Transactional
+    public OrderResponse updateOrderStatus(
+            UUID orderId,
+            String newStatus
+    ) {
+
+        // -------------------------------------------------
+        // FIND ORDER
+        // -------------------------------------------------
+
+        Order order =
+                orderRepository
+                        .findById(orderId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Order not found"
+                                )
+                        );
+
+
+        // -------------------------------------------------
+        // VALIDATE STATUS
+        // -------------------------------------------------
+
+        if (newStatus == null ||
+                newStatus.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Order status is required"
+            );
+        }
+
+
+        String status =
+                newStatus
+                        .trim()
+                        .toUpperCase();
+
+
+        // -------------------------------------------------
+        // ALLOWED STATUSES
+        // -------------------------------------------------
+
+        if (
+                !status.equals("PENDING") &&
+                !status.equals("CONFIRMED") &&
+                !status.equals("SHIPPED") &&
+                !status.equals("DELIVERED") &&
+                !status.equals("CANCELLED")
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Invalid order status: "
+                            + status
+            );
+        }
+
+
+        // -------------------------------------------------
+        // CANCELLED ORDERS CANNOT BE UPDATED
+        // -------------------------------------------------
+
+        if ("CANCELLED".equalsIgnoreCase(
+                order.getStatus()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Cancelled orders cannot be updated."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // DELIVERED ORDERS CANNOT BE UPDATED
+        // -------------------------------------------------
+
+        if ("DELIVERED".equalsIgnoreCase(
+                order.getStatus()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "Delivered orders cannot be updated."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // ADMIN CANNOT CHANGE TO CANCELLED
+        //
+        // Customer cancellation handles stock restore.
+        // Keeping cancellation here disabled prevents an
+        // admin status change from cancelling without
+        // restoring inventory.
+        // -------------------------------------------------
+
+        if ("CANCELLED".equals(status)) {
+
+            throw new IllegalArgumentException(
+                    "Use the order cancellation flow to cancel an order."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // UPDATE STATUS
+        // -------------------------------------------------
+
+        order.setStatus(status);
+
+        order.setUpdatedAt(
+                OffsetDateTime.now(ZoneOffset.UTC)
+        );
+
+
+        Order savedOrder =
+                orderRepository.save(order);
+
+
+        return toResponse(savedOrder);
+    }
+
+
+    // =====================================================
+    // ENTITY -> RESPONSE
+    // =====================================================
 
     private OrderResponse toResponse(
             Order order
@@ -363,6 +760,7 @@ public class OrderService {
 
         OrderResponse response =
                 new OrderResponse();
+
 
         response.setId(
                 order.getId()
@@ -424,9 +822,15 @@ public class OrderService {
                 order.getUpdatedAt()
         );
 
+
+        // -------------------------------------------------
+        // ORDER ITEMS
+        // -------------------------------------------------
+
         List<OrderResponse.OrderItemResponse>
                 itemResponses =
                 new ArrayList<>();
+
 
         if (order.getItems() != null) {
 
@@ -435,11 +839,13 @@ public class OrderService {
 
                 UUID productId = null;
 
+
                 if (item.getProduct() != null) {
 
                     productId =
                             item.getProduct().getId();
                 }
+
 
                 OrderResponse.OrderItemResponse
                         itemResponse =
@@ -453,22 +859,26 @@ public class OrderService {
                                 item.getSubtotal()
                         );
 
+
                 itemResponses.add(
                         itemResponse
                 );
             }
         }
 
+
         response.setItems(
                 itemResponses
         );
 
+
         return response;
     }
 
-    // =========================================================
-    // VALIDATION
-    // =========================================================
+
+    // =====================================================
+    // VALIDATE SHIPPING REQUEST
+    // =====================================================
 
     private void validateShippingRequest(
             CreateOrderRequest request
@@ -480,6 +890,7 @@ public class OrderService {
                     "Order request cannot be null"
             );
         }
+
 
         require(
                 request.getShippingFirstName(),
@@ -520,7 +931,40 @@ public class OrderService {
                 request.getShippingCountry(),
                 "Shipping country"
         );
+
+
+        // -------------------------------------------------
+        // PHONE VALIDATION
+        // -------------------------------------------------
+
+        if (!request.getShippingPhone()
+                .trim()
+                .matches("\\d{10}")) {
+
+            throw new IllegalArgumentException(
+                    "Shipping phone must be a valid 10-digit number"
+            );
+        }
+
+
+        // -------------------------------------------------
+        // POSTAL CODE VALIDATION
+        // -------------------------------------------------
+
+        if (!request.getShippingPostalCode()
+                .trim()
+                .matches("\\d{6}")) {
+
+            throw new IllegalArgumentException(
+                    "Shipping postal code must be a valid 6-digit PIN code"
+            );
+        }
     }
+
+
+    // =====================================================
+    // REQUIRED FIELD VALIDATION
+    // =====================================================
 
     private void require(
             String value,
