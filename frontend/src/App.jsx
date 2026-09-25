@@ -17,6 +17,8 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminUsers from "./pages/AdminUsers";
 import AdminStatistics from "./pages/AdminStatistics";
 
+import ChatWidget from "./components/ChatWidget";
+
 import "./App.css";
 
 
@@ -979,6 +981,11 @@ function App() {
                     )}
 
             </main>
+
+            {/* =====================================================
+                AI SHOPPING ASSISTANT
+            ===================================================== */}
+            {!isAdminRoute && <ChatWidget />}
 
         </div>
     );

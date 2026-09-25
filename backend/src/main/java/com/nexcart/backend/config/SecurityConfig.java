@@ -6,13 +6,11 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.http.HttpMethod;
 
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.web.SecurityFilterChain;
@@ -22,17 +20,24 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+
+    // =====================================================
+    // CONSTRUCTOR
+    // =====================================================
+
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
+
 
     // =====================================================
     // SECURITY FILTER CHAIN
@@ -49,35 +54,37 @@ public class SecurityConfig {
                 // CORS
                 // =================================================
 
-                .cors(cors ->
-                        cors.configurationSource(
+                .cors(cors -> cors
+                        .configurationSource(
                                 corsConfigurationSource()
                         )
                 )
+
 
                 // =================================================
                 // CSRF
                 // =================================================
 
-                .csrf(
-                        AbstractHttpConfigurer::disable
-                )
+                .csrf(AbstractHttpConfigurer::disable)
+
 
                 // =================================================
-                // SESSION
+                // SESSION MANAGEMENT
                 // =================================================
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
+
 
                 // =================================================
                 // AUTHORIZATION
                 // =================================================
 
                 .authorizeHttpRequests(auth -> auth
+
 
                         // -----------------------------------------
                         // PUBLIC AUTH ENDPOINTS
@@ -91,6 +98,7 @@ public class SecurityConfig {
                                 "/api/auth/reset-password"
                         ).permitAll()
 
+
                         // -----------------------------------------
                         // PUBLIC PRODUCTS
                         // -----------------------------------------
@@ -100,6 +108,7 @@ public class SecurityConfig {
                                 "/api/products",
                                 "/api/products/**"
                         ).permitAll()
+
 
                         // -----------------------------------------
                         // PUBLIC CATEGORIES
@@ -111,13 +120,25 @@ public class SecurityConfig {
                                 "/api/categories/**"
                         ).permitAll()
 
+
                         // -----------------------------------------
-                        // ADMIN
+                        // AI CHATBOT
+                        // -----------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/chat"
+                        ).permitAll()
+
+
+                        // -----------------------------------------
+                        // ADMIN ENDPOINTS
                         // -----------------------------------------
 
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
+
 
                         // -----------------------------------------
                         // CUSTOMER ORDERS
@@ -128,42 +149,45 @@ public class SecurityConfig {
                                 "/api/users/me/orders"
                         ).authenticated()
 
+
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/users/me/orders",
                                 "/api/users/me/orders/**"
                         ).authenticated()
 
+
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/users/me/orders/*/cancel"
                         ).authenticated()
+
 
                         // -----------------------------------------
                         // EVERYTHING ELSE
                         // -----------------------------------------
 
                         .anyRequest().authenticated()
+
                 )
+
 
                 // =================================================
                 // DISABLE FORM LOGIN
                 // =================================================
 
-                .formLogin(
-                        AbstractHttpConfigurer::disable
-                )
+                .formLogin(AbstractHttpConfigurer::disable)
+
 
                 // =================================================
-                // DISABLE BASIC AUTH
+                // DISABLE BASIC AUTHENTICATION
                 // =================================================
 
-                .httpBasic(
-                        AbstractHttpConfigurer::disable
-                )
+                .httpBasic(AbstractHttpConfigurer::disable)
+
 
                 // =================================================
-                // JWT FILTER
+                // JWT AUTHENTICATION FILTER
                 // =================================================
 
                 .addFilterBefore(
@@ -171,11 +195,13 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class
                 );
 
+
         return http.build();
     }
 
+
     // =====================================================
-    // CORS
+    // CORS CONFIGURATION
     // =====================================================
 
     @Bean
@@ -184,12 +210,22 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
+
+        // -----------------------------------------
+        // ALLOWED FRONTEND ORIGINS
+        // -----------------------------------------
+
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
                         "http://localhost:3000"
                 )
         );
+
+
+        // -----------------------------------------
+        // ALLOWED HTTP METHODS
+        // -----------------------------------------
 
         configuration.setAllowedMethods(
                 List.of(
@@ -202,6 +238,11 @@ public class SecurityConfig {
                 )
         );
 
+
+        // -----------------------------------------
+        // ALLOWED HEADERS
+        // -----------------------------------------
+
         configuration.setAllowedHeaders(
                 List.of(
                         "Authorization",
@@ -210,15 +251,27 @@ public class SecurityConfig {
                 )
         );
 
+
+        // -----------------------------------------
+        // CREDENTIALS
+        // -----------------------------------------
+
         configuration.setAllowCredentials(true);
+
+
+        // -----------------------------------------
+        // REGISTER CORS CONFIGURATION
+        // -----------------------------------------
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
+
 
         source.registerCorsConfiguration(
                 "/**",
                 configuration
         );
+
 
         return source;
     }
